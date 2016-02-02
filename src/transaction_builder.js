@@ -370,6 +370,15 @@ TransactionBuilder.prototype.__build = function (allowIncomplete) {
 
           var redeemScript = allowIncomplete ? undefined : input.redeemScript
           scriptSig = bscript.multisigInput(msSignatures, redeemScript)
+
+          console.log('input.segWitScript', input.segWitScript)
+
+          if (input.witness) {
+            var scriptSigChunks = bscript.decompile(scriptSig)
+            witness = input.witness
+            witness[1] = scriptSigChunks[1]
+            scriptSig = bscript.compile([input.segWitScript])
+          }
           break
 
         case 'pubkey':
@@ -389,7 +398,7 @@ TransactionBuilder.prototype.__build = function (allowIncomplete) {
     // did we build a scriptSig?
     if (scriptSig) {
       // wrap as scriptHash if necessary
-      if (input.prevOutType === 'scripthash') {
+      if (input.prevOutType === 'scripthash' && !input.witness) {
         scriptSig = bscript.scriptHashInput(scriptSig, input.redeemScript)
       }
 
@@ -400,7 +409,7 @@ TransactionBuilder.prototype.__build = function (allowIncomplete) {
   return tx
 }
 
-TransactionBuilder.prototype.sign = function (index, keyPair, redeemScript, hashType, segWit, amount) {
+TransactionBuilder.prototype.sign = function (index, keyPair, redeemScript, hashType, segWit, amount, segWitScript) {
   if (keyPair.network !== this.network) throw new Error('Inconsistent network')
   if (!this.inputs[index]) throw new Error('No input at index: ' + index)
   hashType = hashType || Transaction.SIGHASH_ALL
@@ -419,7 +428,7 @@ TransactionBuilder.prototype.sign = function (index, keyPair, redeemScript, hash
   // are we ready to sign?
   if (canSign) {
     // if redeemScript was provided, enforce consistency
-    if (redeemScript) {
+    if (redeemScript && input.redeemScript) {
       if (!bufferEquals(input.redeemScript, redeemScript)) throw new Error('Inconsistent redeemScript')
     }
 
@@ -447,6 +456,10 @@ TransactionBuilder.prototype.sign = function (index, keyPair, redeemScript, hash
       switch (scriptType) {
         case 'multisig':
           pubKeys = redeemScriptChunks.slice(1, -2)
+
+          if (segWit) {
+            input.witness = [new Buffer(''), undefined, redeemScript]
+          }
 
           break
 
@@ -488,6 +501,7 @@ TransactionBuilder.prototype.sign = function (index, keyPair, redeemScript, hash
 
       input.pubKeys = pubKeys
       input.redeemScript = redeemScript
+      input.segWitScript = segWitScript
       input.scriptType = scriptType
       input.signatures = pubKeys.map(function () { return undefined })
     } else {
@@ -523,11 +537,33 @@ TransactionBuilder.prototype.sign = function (index, keyPair, redeemScript, hash
   }
 
   // ready to sign?
-  var signatureScript = input.signatureScript || input.redeemScript || input.prevOutScript
+  var signatureScript = input.redeemScript || input.prevOutScript
   var signatureHash = this.tx.hashForSignature(index, signatureScript, hashType, segWit, amount)
 
   // enforce in order signing of public keys
   var valid = input.pubKeys.some(function (pubKey, i) {
+    if (false) {
+      console.log(index, i)
+      console.log(!!input.signatures[0], !!input.signatures[1])
+      if (index === 0) {
+        if (i === 0 && !input.signatures[0]) {
+          input.signatures[0] = ECSignature.fromDER(new Buffer('30440220121a629bb5fee3ecaf3e7a0b111101c51de816f427eaedd992b57f49b69b228e0220402ecd144a7321b4bad6ba3bfa5876b755b9c52a8c8ab17a33830d5929a76cbe', 'hex'))
+          return true
+        } else if (i === 1 && !input.signatures[1]) {
+          input.signatures[1] = ECSignature.fromDER(new Buffer('3045022100f4770442f8509c8065638482fb1eca0ccaed18d740551cb53abe09a6675d94c5022068f6a904e6bf4a639bbb0aaa1870c137a64717a1d53b47b14e584cf0e05cf750', 'hex'))
+          return true
+        }
+      } else if (index === 1) {
+        if (i === 0 && !input.signatures[0]) {
+          input.signatures[0] = ECSignature.fromDER(new Buffer('304402207a58fb0fa45e59352e018e1d48b4905657504418d75a11ba34685b585da65de5022040f27e9790ec1719fe63fb5bd01e1f73be43ff2a165d08a4ba225ef60892d545', 'hex'))
+          return true
+        } else if (i === 1 && !input.signatures[1]) {
+          input.signatures[1] = ECSignature.fromDER(new Buffer('3045022100ba06ddc5cacaac6e43c0d813d53eec8705124505f24064bee361d41dd54fd84702207d9f382f7fc6db8efcab713ee09e28493c4081a2194f003e00981c389e26fa00', 'hex'))
+          return true
+        }
+      }
+    }
+
     if (!bufferEquals(kpPubKey, pubKey)) return false
     if (input.signatures[i]) throw new Error('Signature already exists')
 

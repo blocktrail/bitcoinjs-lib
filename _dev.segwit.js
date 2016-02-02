@@ -1,48 +1,47 @@
 var bitcoinjs = require('./src/index')
 var bcrypto = require('./src/crypto')
 var bscript = require('./src/script')
+var assert = require('assert')
 
+// spending P2WSH nested in P2SH
 // /*
-// p2pkh DRXnpJKWNbPRwvA6w86rKSAUcoQTPPu6rm // p2sh(p2wpkh) MFDkRVPQgUU8ph6fqsihsnu2EPjHWjLKCz // p2wpkh ...
-// QRtNLYQLpwLHn75LbHLRLo2U491ZPXt9AEbFyP3zbYrjftbrkgHX
 
-var keyPair1 = bitcoinjs.ECPair.fromWIF('QWPDhFzyFuLkyqcCuQ7oQ5Ms5yxKrddtszpXTyzvpJcrFe4JwSQS', bitcoinjs.networks.segnet)
-var keyPair2 = bitcoinjs.ECPair.fromWIF('QWPDhFzyFuLkyqcCuQ7oQ5Ms5yxKrddtszpXTyzvpJcrFe4JwSQS', bitcoinjs.networks.segnet)
-var pubKey1 = keyPair1.getPublicKeyBuffer()
-var pubKey2 = keyPair2.getPublicKeyBuffer()
-var msigScript = bscript.multisigOutput(1, [pubKey1, pubKey2])
-var msigScriptHash = bcrypto.hash256(msigScript)
-var segWitScript = bscript.segWitScriptHashOutput(msigScriptHash)
+// vin1 witness:
+// _
+// 30440220121a629bb5fee3ecaf3e7a0b111101c51de816f427eaedd992b57f49b69b228e0220402ecd144a7321b4bad6ba3bfa5876b755b9c52a8c8ab17a33830d5929a76cbe01
+// 512103b848ab6ac853cd69baaa750c70eb352ebeadb07da0ff5bbd642cb285895ee43f51ae
+var keyPair = bitcoinjs.ECPair.fromWIF('QP3p9tRpTGTefG4a8jKoktSWC7Um8qzvt8wGKMxwWyW3KTNxMxN7', bitcoinjs.networks.segnet)
+var pubKey = keyPair.getPublicKeyBuffer()
+var pubKeyHash = bcrypto.hash160(pubKey)
+var multisigScript = bscript.multisigOutput(1, [pubKey])
+var segWitMultisigScript = bscript.segWitScriptHashOutput(bcrypto.sha256(multisigScript))
+var p2sh = bscript.scriptHashOutput(bcrypto.hash160(segWitMultisigScript))
 
-console.log(msigScript.toString('hex'))
-console.log(segWitScript.toString('hex'), segWitScript.length)
+console.log(multisigScript)
+console.log(bscript.decompile(multisigScript))
+assert(multisigScript.toString('hex') === '512103b848ab6ac853cd69baaa750c70eb352ebeadb07da0ff5bbd642cb285895ee43f51ae')
 
-console.log(bscript.isSegWitScriptHashOutput(segWitScript))
-console.log(bitcoinjs.address.fromOutputScript(segWitScript, bitcoinjs.networks.segnet))
+console.log(bcrypto.sha256(multisigScript))
+assert(bcrypto.sha256(multisigScript).toString('hex') === '86b2dcecbf2e0f0e4095ef11bc8834e2e148d245f844f0b8091389fef91b69ff')
 
-console.log(bitcoinjs.address.toOutputScript("T7nZBtafiNv9ZhaZ7ujAFbTjzBPC6q9rk5KCdrFeAsy7Z6aDM1RPt", bitcoinjs.networks.segnet))
+console.log(segWitMultisigScript)
+console.log(bscript.decompile(segWitMultisigScript))
+assert(segWitMultisigScript.toString('hex') === '002086b2dcecbf2e0f0e4095ef11bc8834e2e148d245f844f0b8091389fef91b69ff')
 
-return
-
-// console.log(bitcoinjs.address.toOutputScript('BQqmtkq4ph53rkTfp2SFtooYUH7jrQHz3J', bitcoinjs.networks.segnet))
-
-//var prevOutScriptChunks = bscript.decompile(segWitScript)
-//var prevOutType = bscript.classifyOutput(prevOutScriptChunks)
-//console.log(prevOutType)
-//console.log(prevOutScriptChunks)
+console.log(p2sh)
+console.log(bscript.decompile(p2sh))
+assert(multisigScript.toString('hex') === '512103b848ab6ac853cd69baaa750c70eb352ebeadb07da0ff5bbd642cb285895ee43f51ae')
 
 var txb = new bitcoinjs.TransactionBuilder(bitcoinjs.networks.segnet)
 
 console.log('addInput')
-txb.addInput('e628ed878f8173db57a620f75ed28d0d17b5bb1d9e17986bd6fe3d12f891c7ba', 0, 4294967295) // 0.9997 * 1e8
+txb.addInput('23d6640c3f3383ffc8233fbd830ee49162c720389bbba1c313a43b06a235ae13', 0, 4294967295) // 0.10000000 * 1e8
 
 console.log('addOutput')
-txb.addOutput(bscript.scriptHashOutput(bcrypto.hash160(segWitScript)), parseInt(0.9996 * 1e8))
-
-// console.log('incomplete', txb.buildIncomplete().toHex(true)) return
+txb.addOutput("DMLasUfyFT5uxrbo2ETR1wtBBbYrNHCM65", parseInt(0.10000000 * 1e8))
 
 console.log('sign')
-console.log(txb.sign(0, keyPair, segWitScript, null, true, parseInt(0.9997 * 1e8)))
+console.log(txb.sign(0, keyPair, multisigScript, null, true, parseInt(0.10000000 * 1e8), segWitMultisigScript))
 
 var tx = txb.build()
 var raw = tx.toHex(true)
@@ -57,7 +56,7 @@ console.log('input', tx2.ins[0])
 console.log('output', tx2.outs[0])
 console.log('locktime', tx2.locktime)
 
-var shouldBeRaw = '01000000000101bac791f8123dfed66b98179e1dbbb5170d8dd25ef720a657db73818f87ed28e60000000017160014dfad49bbc3318632df40093a7cc700dd1ea128acffffffff01c044f5050000000017a914504ce8a3d3035116bbf6c96f2528c786890b64c68702483045022100d1fa623748936a2e056465faf1112c1f61b3a5bf534add8e0ef2a80a5dbfeca4022050ed41d1f4eceaffd53947228de395b36f827fb4875345a1b99be97ec14324c0012103ae9ebf213eb699d4038acac7737df47baf754fd9cac42aff2b1a381f4a6529ce00000000'
+var shouldBeRaw = '0100000000010113ae35a2063ba413c3a1bb9b3820c76291e40e83bd3f23c8ff83333f0c64d623000000002322002086b2dcecbf2e0f0e4095ef11bc8834e2e148d245f844f0b8091389fef91b69ffffffffff0180969800000000001976a914b1ae3ceac136e4bdb733663e7a1e2f0961198a1788ac03004730440220121a629bb5fee3ecaf3e7a0b111101c51de816f427eaedd992b57f49b69b228e0220402ecd144a7321b4bad6ba3bfa5876b755b9c52a8c8ab17a33830d5929a76cbe0125512103b848ab6ac853cd69baaa750c70eb352ebeadb07da0ff5bbd642cb285895ee43f51ae00000000'
 console.log('r1', raw)
 console.log('r2', shouldBeRaw)
 console.log(raw === shouldBeRaw)
