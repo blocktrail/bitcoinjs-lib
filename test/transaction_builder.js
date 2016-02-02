@@ -29,7 +29,9 @@ function construct (f, sign) {
   f.inputs.forEach(function (input) {
     var prevTxScript
 
-    if (input.prevTxScript) {
+    if (input.prevTxScriptHex) {
+      prevTxScript = new Buffer(input.prevTxScriptHex, 'hex')
+    } else if (input.prevTxScript) {
       prevTxScript = bscript.fromASM(input.prevTxScript)
     }
 
@@ -50,7 +52,7 @@ function construct (f, sign) {
           redeemScript = bscript.fromASM(sign.redeemScript)
         }
 
-        txb.sign(index, keyPair, redeemScript, sign.hashType)
+        txb.sign(index, keyPair, redeemScript, sign.hashType, sign.segWit, input.value)
       })
     })
   }
@@ -78,11 +80,16 @@ describe('TransactionBuilder', function () {
     fixtures.valid.build.forEach(function (f) {
       it('builds TransactionBuilder, with ' + f.description, function () {
         var network = NETWORKS[f.network || 'bitcoin']
-        var tx = Transaction.fromHex(f.txHex)
+        var tx = Transaction.fromHex(f.txHexWithWitness || f.txHex)
         var txb = TransactionBuilder.fromTransaction(tx, network)
 
-        assert.strictEqual(txb.build().toHex(), f.txHex)
         assert.strictEqual(txb.network, network)
+
+        assert.strictEqual(txb.build().toHex(), f.txHex, 'build().toHex() === txHex')
+
+        if (typeof f.txHexWithWitness !== 'undefined') {
+          assert.strictEqual(txb.build().toHex(true), f.txHexWithWitness, 'build().toHex(true) === txHexWithWitness')
+        }
       })
     })
 
@@ -286,7 +293,12 @@ describe('TransactionBuilder', function () {
         txb = construct(f)
 
         var tx = txb.build()
-        assert.strictEqual(tx.toHex(), f.txHex)
+
+        assert.strictEqual(tx.toHex(), f.txHex, 'toHex() === txHex')
+
+        if (typeof f.txHexWithWitness !== 'undefined') {
+          assert.strictEqual(tx.toHex(true), f.txHexWithWitness, 'toHex() === txHexWithWitness')
+        }
       })
     })
 
