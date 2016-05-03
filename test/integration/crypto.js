@@ -4,7 +4,7 @@ var assert = require('assert')
 var async = require('async')
 var bigi = require('bigi')
 var bitcoin = require('../../')
-var blockchain = new (require('cb-helloblock'))('bitcoin')
+var blockchain = require('./_blockchain')
 var crypto = require('crypto')
 
 describe('bitcoinjs-lib (crypto)', function () {
@@ -89,7 +89,7 @@ describe('bitcoinjs-lib (crypto)', function () {
     assert.equal(recovered.toBase58(), master.toBase58())
   })
 
-  it('can recover a private key from duplicate R values', function () {
+  it('can recover a private key from duplicate R values', function (done) {
     var inputs = [
       {
         txId: 'f4c16475f2a6e9c602e4a287f9db3040e319eb9ece74761a4b84bc820fbeef50',
@@ -106,7 +106,7 @@ describe('bitcoinjs-lib (crypto)', function () {
     })
 
     // first retrieve the relevant transactions
-    blockchain.transactions.get(txIds, function (err, results) {
+    blockchain.m.transactions.get(txIds, function (err, results) {
       assert.ifError(err)
 
       var transactions = {}
@@ -126,7 +126,7 @@ describe('bitcoinjs-lib (crypto)', function () {
         var prevVout = transaction.ins[input.vout].index
 
         tasks.push(function (callback) {
-          blockchain.transactions.get(prevOutTxId, function (err, result) {
+          blockchain.m.transactions.get(prevOutTxId, function (err, result) {
             if (err) return callback(err)
 
             var prevOut = bitcoin.Transaction.fromHex(result.txHex)
@@ -149,8 +149,9 @@ describe('bitcoinjs-lib (crypto)', function () {
 
       // finally, run the tasks, then on to the math
       async.parallel(tasks, function (err) {
-        if (err)
+        if (err) {
           throw err
+        }
         var n = bitcoin.ECKey.curve.n
 
         for (var i = 0; i < inputs.length; ++i) {
@@ -182,6 +183,8 @@ describe('bitcoinjs-lib (crypto)', function () {
             assert.equal(d1.toString(), d2.toString())
           }
         }
+
+        done()
       })
     })
   })

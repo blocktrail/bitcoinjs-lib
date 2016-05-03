@@ -2,7 +2,7 @@
 
 var assert = require('assert')
 var bitcoin = require('../../')
-var blockchain = new (require('cb-helloblock'))('testnet')
+var blockchain = require('./_blockchain')
 
 describe('bitcoinjs-lib (multisig)', function () {
   it('can create a 2-of-3 multisig P2SH address', function () {
@@ -37,43 +37,30 @@ describe('bitcoinjs-lib (multisig)', function () {
     var address = bitcoin.Address.fromOutputScript(scriptPubKey, bitcoin.networks.testnet).toString()
 
     // Attempt to send funds to the source address
-    blockchain.addresses.__faucetWithdraw(address, 2e4, function (err) {
+    blockchain.t.faucet(address, 2e4, function (err, unspent) {
       if (err) return done(err)
 
-      // get latest unspents from the address
-      blockchain.addresses.unspents(address, function (err, unspents) {
+      // make a random destination address
+      var targetAddress = bitcoin.ECKey.makeRandom().pub.getAddress(bitcoin.networks.testnet).toString()
+
+      var txb = new bitcoin.TransactionBuilder()
+      txb.addInput(unspent.txId, unspent.vout)
+      txb.addOutput(targetAddress, 1e4)
+
+      // sign with 1st and 3rd key
+      txb.sign(0, privKeys[0], redeemScript)
+      txb.sign(0, privKeys[2], redeemScript)
+
+      // broadcast our transaction
+      blockchain.t.transactions.propagate(txb.build().toHex(), function (err) {
         if (err) return done(err)
 
-        // filter small unspents
-        unspents = unspents.filter(function (unspent) {
-          return unspent.value > 1e4
-        })
-
-        // use the oldest unspent
-        var unspent = unspents.pop()
-
-        // make a random destination address
-        var targetAddress = bitcoin.ECKey.makeRandom().pub.getAddress(bitcoin.networks.testnet).toString()
-
-        var txb = new bitcoin.TransactionBuilder()
-        txb.addInput(unspent.txId, unspent.vout)
-        txb.addOutput(targetAddress, 1e4)
-
-        // sign with 1st and 3rd key
-        txb.sign(0, privKeys[0], redeemScript)
-        txb.sign(0, privKeys[2], redeemScript)
-
-        // broadcast our transaction
-        blockchain.transactions.propagate(txb.build().toHex(), function (err) {
+        // check that the funds (1e4 Satoshis) indeed arrived at the intended address
+        blockchain.t.addresses.summary(targetAddress, function (err, result) {
           if (err) return done(err)
 
-          // check that the funds (1e4 Satoshis) indeed arrived at the intended address
-          blockchain.addresses.summary(targetAddress, function (err, result) {
-            if (err) return done(err)
-
-            assert.equal(result.balance, 1e4)
-            done()
-          })
+          assert.equal(result.balance, 1e4)
+          done()
         })
       })
     })
