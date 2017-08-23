@@ -174,7 +174,7 @@ function expandInput (scriptSig, witnessStack) {
 }
 
 // could be done in expandInput, but requires the original Transaction for hashForSignature
-function fixMultisigOrder (input, transaction, vin) {
+function fixMultisigOrder (input, transaction, vin, bitcoinCash) {
   if (input.signType !== scriptTypes.MULTISIG || !input.signScript) return
   if (input.pubKeys.length === input.signatures.length) return
 
@@ -192,10 +192,15 @@ function fixMultisigOrder (input, transaction, vin) {
       // TODO: avoid O(n) hashForSignature
       var parsed = ECSignature.parseScriptSignature(signature)
       var hash
-      if (input.witness) {
-        hash = transaction.hashForWitnessV0(vin, input.signScript, input.value, parsed.hashType)
+
+      if (bitcoinCash) {
+        hash = transaction.hashForCashSignature(vin, input.signScript, input.value, parsed.hashType)
       } else {
-        hash = transaction.hashForSignature(vin, input.signScript, parsed.hashType)
+        if (input.witness) {
+          hash = transaction.hashForWitnessV0(vin, input.signScript, input.value, parsed.hashType)
+        } else {
+          hash = transaction.hashForSignature(vin, input.signScript, parsed.hashType)
+        }
       }
 
       // skip if signature does not match pubKey
@@ -515,8 +520,9 @@ TransactionBuilder.prototype.setVersion = function (version) {
   this.tx.version = version
 }
 
-TransactionBuilder.fromTransaction = function (transaction, network) {
+TransactionBuilder.fromTransaction = function (transaction, network, bitcoinCashTx) {
   var txb = new TransactionBuilder(network)
+  txb.enableBitcoinCash(Boolean(bitcoinCashTx))
 
   // Copy transaction fields
   txb.setVersion(transaction.version)
@@ -539,7 +545,7 @@ TransactionBuilder.fromTransaction = function (transaction, network) {
 
   // fix some things not possible through the public API
   txb.inputs.forEach(function (input, i) {
-    fixMultisigOrder(input, transaction, i)
+    fixMultisigOrder(input, transaction, i, input.value, bitcoinCashTx)
   })
 
   return txb
