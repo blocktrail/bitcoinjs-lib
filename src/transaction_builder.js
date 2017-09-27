@@ -545,7 +545,7 @@ TransactionBuilder.fromTransaction = function (transaction, network, bitcoinCash
 
   // fix some things not possible through the public API
   txb.inputs.forEach(function (input, i) {
-    fixMultisigOrder(input, transaction, i, input.value, bitcoinCashTx)
+    fixMultisigOrder(input, transaction, i, bitcoinCashTx)
   })
 
   return txb
