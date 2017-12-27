@@ -15,6 +15,55 @@
       "script": "OP_HASH160 cd7b44d0b03f2d026d1e586d7ae18903b0d385f6 OP_EQUAL"
     },
     {
+      "network": "bitcoincash",
+      "version": "pubkeyhash",
+      "hash": "76a04053bda0a88bda5177b86a15c3b29f559873",
+      "cashaddr": "bitcoincash:qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6a",
+      "script": "OP_DUP OP_HASH160 76a04053bda0a88bda5177b86a15c3b29f559873 OP_EQUALVERIFY OP_CHECKSIG"
+    },
+    {
+      "network": "bitcoincash",
+      "version": "pubkeyhash",
+      "hash": "cb481232299cd5743151ac4b2d63ae198e7bb0a9",
+      "cashaddr": "bitcoincash:qr95sy3j9xwd2ap32xkykttr4cvcu7as4y0qverfuy",
+      "script": "OP_DUP OP_HASH160 cb481232299cd5743151ac4b2d63ae198e7bb0a9 OP_EQUALVERIFY OP_CHECKSIG"
+    },
+    {
+      "network": "bitcoincash",
+      "version": "pubkeyhash",
+      "hash": "011f28e473c95f4013d7d53ec5fbc3b42df8ed10",
+      "cashaddr": "bitcoincash:qqq3728yw0y47sqn6l2na30mcw6zm78dzqre909m2r",
+      "script": "OP_DUP OP_HASH160 011f28e473c95f4013d7d53ec5fbc3b42df8ed10 OP_EQUALVERIFY OP_CHECKSIG"
+    },
+    {
+      "network": "bitcoincash",
+      "version": "scripthash",
+      "hash": "76a04053bda0a88bda5177b86a15c3b29f559873",
+      "cashaddr": "bitcoincash:ppm2qsznhks23z7629mms6s4cwef74vcwvn0h829pq",
+      "script": "OP_HASH160 76a04053bda0a88bda5177b86a15c3b29f559873 OP_EQUAL"
+    },
+    {
+      "network": "bitcoincash",
+      "version": "scripthash",
+      "hash": "cb481232299cd5743151ac4b2d63ae198e7bb0a9",
+      "cashaddr": "bitcoincash:pr95sy3j9xwd2ap32xkykttr4cvcu7as4yc93ky28e",
+      "script": "OP_HASH160 cb481232299cd5743151ac4b2d63ae198e7bb0a9 OP_EQUAL"
+    },
+    {
+      "network": "bitcoincash",
+      "version": "scripthash",
+      "hash": "011f28e473c95f4013d7d53ec5fbc3b42df8ed10",
+      "cashaddr": "bitcoincash:pqq3728yw0y47sqn6l2na30mcw6zm78dzq5ucqzc37",
+      "script": "OP_HASH160 011f28e473c95f4013d7d53ec5fbc3b42df8ed10 OP_EQUAL"
+    },
+    {
+      "network": "bitcoincashtestnet",
+      "version": "scripthash",
+      "hash": "76a04053bda0a88bda5177b86a15c3b29f559873",
+      "cashaddr": "bchtest:ppm2qsznhks23z7629mms6s4cwef74vcwvhanqgjxu",
+      "script": "OP_HASH160 76a04053bda0a88bda5177b86a15c3b29f559873 OP_EQUAL"
+    },
+    {
       "network": "litecoin",
       "version": 50,
       "hash": "332bdfb31f688c0be0137c7c038a6d0fea0de0b6",
@@ -86,6 +135,24 @@
     }
   ],
   "invalid": {
+    "fromBase32": [
+      {
+        "address": "bitcoincash:ppm2qsznhks23z7629mms6s4cwef74vcwvn0h829pz",
+        "exception": "Invalid checksum"
+      },
+      {
+        "address": "bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t5",
+        "exception": "No separator character for bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t5"
+      },
+      {
+        "address": "bitcoincash:ypm2qsznhks23z7629mms6s4cwef74vcwv279a32dj",
+        "exception": "Invalid script type"
+      },
+      {
+        "address": "bitcoincash:qdm2qsznhks23z7629mms6s4cwef74vcwv4g98y45a",
+        "exception": "Incorrect data size for this address version"
+      }
+    ],
     "bech32": [
       {
         "address": "bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t5",
