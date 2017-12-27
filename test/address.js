@@ -28,6 +28,27 @@ describe('address', function () {
     })
   })
 
+  describe('fromBase32', function () {
+    fixtures.standard.forEach(function (f) {
+      if (!f.cashaddr) return
+
+      it('decodes ' + f.cashaddr, function () {
+        var decode = baddress.fromBase32(f.cashaddr)
+
+        assert.strictEqual(decode.version, f.version)
+        assert.strictEqual(decode.hash.toString('hex'), f.hash)
+      })
+    })
+
+    fixtures.invalid.fromBase32.forEach(function (f) {
+      it('throws on ' + f.exception, function () {
+        assert.throws(function () {
+          baddress.fromBase32(f.address)
+        }, new RegExp(f.exception))
+      })
+    })
+  })
+
   describe('fromBech32', function () {
     fixtures.standard.forEach((f) => {
       if (!f.bech32) return
@@ -54,9 +75,16 @@ describe('address', function () {
     fixtures.standard.forEach(function (f) {
       it('encodes ' + f.script.slice(0, 30) + '... (' + f.network + ')', function () {
         var script = bscript.fromASM(f.script)
-        var address = baddress.fromOutputScript(script, networks[f.network])
+        var allowCash = 'cashaddr' in f
+        var address = baddress.fromOutputScript(script, networks[f.network], allowCash)
 
-        assert.strictEqual(address, f.base58check || f.bech32.toLowerCase())
+        if (f.base58check) {
+          assert.strictEqual(address, f.base58check)
+        } else if (f.bech32) {
+          assert.strictEqual(address, f.bech32.toLowerCase())
+        } else if (f.base32) {
+          assert.strictEqual(address, f.base32.toLowerCase())
+        }
       })
     })
 
@@ -107,8 +135,14 @@ describe('address', function () {
   describe('toOutputScript', function () {
     fixtures.standard.forEach(function (f) {
       it('decodes ' + f.script.slice(0, 30) + '... (' + f.network + ')', function () {
-        var script = baddress.toOutputScript(f.base58check || f.bech32, networks[f.network])
-
+        var script;
+        if (f.base58check) {
+          script = baddress.toOutputScript(f.base58check || f.bech32, networks[f.network])
+        } else if (f.bech32) {
+          script = baddress.toOutputScript(f.bech32, networks[f.network])
+        } else if (f.cashaddr) {
+          script = baddress.toOutputScript(f.cashaddr, networks[f.network], true)
+        }
         assert.strictEqual(bscript.toASM(script), f.script)
       })
     })
