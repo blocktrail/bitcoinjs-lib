@@ -1,6 +1,6 @@
 var Buffer = require('safe-buffer').Buffer
-var bech32 = require('bech32').bech32
-var base32 = require('bech32').base32
+var bech32 = require('bech32')
+var base32 = require('cashaddress')
 var bs58check = require('bs58check')
 var bscript = require('./script')
 var btemplates = require('./templates')
@@ -27,33 +27,6 @@ function getHashBitSizeFlags (size) {
   }
 }
 
-function getSizeFromHashBits (bits) {
-  if (bits < 0 || bits > 8) {
-    throw new Error('Invalid bits for hash');
-  }
-  switch (bits) {
-    case 0: return 160
-    case 1: return 192
-    case 2 : return 224
-    case 3 : return 256
-    case 4 : return 320
-    case 5 : return 384
-    case 6 : return 448
-    case 7 : return 512
-  }
-}
-
-function getScriptTypeFromBits (bits) {
-  switch (bits) {
-    case 0:
-      return btemplates.types.P2PKH
-    case 1:
-      return btemplates.types.P2SH
-    default:
-      throw new Error('Invalid script type')
-  }
-}
-
 function getScriptTypeFlags (type) {
   switch (type) {
     case btemplates.types.P2PKH: return 0
@@ -66,17 +39,46 @@ function parseBase32Version (version) {
   // 1 bit  (8  ):   MSB: 0 (reserved)
   // 4 bits (3-7):   script type
   // 3 bits (0-2):   LSB: hash size
+  if ((version >> 7) & 1) {
+    throw new Error('Invalid version, MSB is reserved');
+  }
+  var scriptType
+  switch ((version >> 3) & 0xf) {
+    case 0:
+      scriptType = btemplates.types.P2PKH
+      break
+    case 1:
+      scriptType = btemplates.types.P2SH
+      break
+    default:
+      throw new Error('Invalid script type')
+  }
+
+  var hashBits = version & 0x07
+  var hashLengthBits
+  switch (hashBits) {
+    case 0: hashLengthBits = 160; break
+    case 1: hashLengthBits = 192; break
+    case 2 : hashLengthBits = 224; break
+    case 3 : hashLengthBits = 256; break
+    case 4 : hashLengthBits = 320; break
+    case 5 : hashLengthBits = 384; break
+    case 6 : hashLengthBits = 448; break
+    case 7 : hashLengthBits = 512; break
+    default:
+      throw new Error('Invalid bits for hash');
+  }
 
   return {
-    scriptType: getScriptTypeFromBits((version >> 3) & 0xf),
-    hashSize: getSizeFromHashBits(version & 0x07)
+    scriptType: scriptType,
+    hashSize: hashLengthBits
   }
 }
 
 function fromBase58Check (address) {
   var payload = bs58check.decode(address)
 
-  // TODO: 4.0.0, move to "toOutputScript"
+  // TODO: 4.0.0, move to 'toOutputScript'
   if (payload.length < 21) throw new TypeError(address + ' is too short')
   if (payload.length > 21) throw new TypeError(address + ' is too long')
 
