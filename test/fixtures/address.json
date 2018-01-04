@@ -150,7 +150,7 @@
       },
       {
         "address": "bitcoincash:qdm2qsznhks23z7629mms6s4cwef74vcwv4g98y45a",
-        "exception": "Incorrect data size for this address version"
+        "exception": "Mismatch between script type and hash length"
       }
     ],
     "bech32": [
