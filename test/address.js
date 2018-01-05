@@ -28,22 +28,22 @@ describe('address', function () {
     })
   })
 
-  describe('fromBase32', function () {
+  describe('fromCashAddress', function () {
     fixtures.standard.forEach(function (f) {
       if (!f.cashaddr) return
 
       it('decodes ' + f.cashaddr, function () {
-        var decode = baddress.fromBase32(f.cashaddr)
+        var decode = baddress.fromCashAddress(f.cashaddr)
 
         assert.strictEqual(decode.version, f.version)
         assert.strictEqual(decode.hash.toString('hex'), f.hash)
       })
     })
 
-    fixtures.invalid.fromBase32.forEach(function (f) {
+    fixtures.invalid.fromCashAddress.forEach(function (f) {
       it('throws on ' + f.exception, function () {
         assert.throws(function () {
-          baddress.fromBase32(f.address)
+          baddress.fromCashAddress(f.address)
         }, new RegExp(f.exception))
       })
     })

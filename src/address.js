@@ -32,7 +32,7 @@ function fromBech32 (address) {
   }
 }
 
-function fromBase32 (address) {
+function fromCashAddress (address) {
   return cashaddress.decode(address)
 }
 
@@ -53,7 +53,7 @@ function toBech32 (data, version, prefix) {
   return bech32.encode(prefix, words)
 }
 
-function toBase32 (data, scriptType, prefix) {
+function toCashAddress (data, scriptType, prefix) {
   return cashaddress.encode(prefix, scriptType, data)
 }
 
@@ -62,8 +62,8 @@ function fromOutputScript (outputScript, network, useNewCashAddress) {
   useNewCashAddress = useNewCashAddress || false
 
   if ('cashAddrPrefix' in network && useNewCashAddress) {
-    if (bscript.pubKeyHash.output.check(outputScript)) return toBase32(bscript.compile(outputScript).slice(3, 23), btemplates.types.P2PKH, network.cashAddrPrefix)
-    if (bscript.scriptHash.output.check(outputScript)) return toBase32(bscript.compile(outputScript).slice(2, 22), btemplates.types.P2SH, network.cashAddrPrefix)
+    if (bscript.pubKeyHash.output.check(outputScript)) return toCashAddress(bscript.compile(outputScript).slice(3, 23), btemplates.types.P2PKH, network.cashAddrPrefix)
+    if (bscript.scriptHash.output.check(outputScript)) return toCashAddress(bscript.compile(outputScript).slice(2, 22), btemplates.types.P2SH, network.cashAddrPrefix)
   } else {
     if (bscript.pubKeyHash.output.check(outputScript)) return toBase58Check(bscript.compile(outputScript).slice(3, 23), network.pubKeyHash)
     if (bscript.scriptHash.output.check(outputScript)) return toBase58Check(bscript.compile(outputScript).slice(2, 22), network.scriptHash)
@@ -81,7 +81,7 @@ function toOutputScript (address, network, useNewCashAddress) {
   var decode
   try {
     if ('cashAddrPrefix' in network && useNewCashAddress) {
-      decode = fromBase32(address)
+      decode = fromCashAddress(address)
       if (decode.prefix !== network.cashAddrPrefix) throw new Error(address + ' has an invalid prefix')
       if (decode.version === 'pubkeyhash') return bscript.pubKeyHash.output.encode(decode.hash)
       if (decode.version === 'scripthash') return bscript.scriptHash.output.encode(decode.hash)
@@ -112,10 +112,10 @@ function toOutputScript (address, network, useNewCashAddress) {
 module.exports = {
   fromBase58Check: fromBase58Check,
   fromBech32: fromBech32,
-  fromBase32: fromBase32,
+  fromCashAddress: fromCashAddress,
   fromOutputScript: fromOutputScript,
   toBase58Check: toBase58Check,
   toBech32: toBech32,
-  toBase32: toBase32,
+  toCashAddress: toCashAddress,
   toOutputScript: toOutputScript
 }

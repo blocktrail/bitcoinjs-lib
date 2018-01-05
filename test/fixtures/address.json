@@ -135,7 +135,7 @@
     }
   ],
   "invalid": {
-    "fromBase32": [
+    "fromCashAddress": [
       {
         "address": "bitcoincash:ppm2qsznhks23z7629mms6s4cwef74vcwvn0h829pz",
         "exception": "Invalid checksum"
