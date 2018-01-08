@@ -79,20 +79,27 @@ function toOutputScript (address, network, useNewCashAddress) {
   network = network || networks.bitcoin
 
   var decode
-  try {
-    if ('cashAddrPrefix' in network && useNewCashAddress) {
+  if ('cashAddrPrefix' in network && useNewCashAddress) {
+    try {
       decode = fromCashAddress(address)
-      if (decode.prefix !== network.cashAddrPrefix) throw new Error(address + ' has an invalid prefix')
       if (decode.version === 'pubkeyhash') return bscript.pubKeyHash.output.encode(decode.hash)
       if (decode.version === 'scripthash') return bscript.scriptHash.output.encode(decode.hash)
-    } else {
-      decode = fromBase58Check(address)
-      if (decode.version === network.pubKeyHash) return bscript.pubKeyHash.output.encode(decode.hash)
-      if (decode.version === network.scriptHash) return bscript.scriptHash.output.encode(decode.hash)
+    } catch (e) {
+
     }
+
+    if (decode) {
+      if (decode.prefix !== network.cashAddrPrefix) throw new Error(address + ' has an invalid prefix')
+    }
+  }
+
+  try {
+    decode = fromBase58Check(address)
+    if (decode.version === network.pubKeyHash) return bscript.pubKeyHash.output.encode(decode.hash)
+    if (decode.version === network.scriptHash) return bscript.scriptHash.output.encode(decode.hash)
   } catch (e) {}
 
-  if (!decode) {
+  if (!decode && 'bech32' in network) {
     try {
       decode = fromBech32(address)
     } catch (e) {}
