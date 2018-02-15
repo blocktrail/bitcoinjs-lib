@@ -2,6 +2,21 @@
 // Dogecoin BIP32 is a proposed standard: https://bitcointalk.org/index.php?topic=409731
 
 module.exports = {
+  bitcoincashregtest: {
+    messagePrefix: '\x18Bitcoin Signed Message:\n',
+    bip32: {
+      public: 0x043587cf,
+      private: 0x04358394
+    },
+    cashAddrPrefix: 'bchreg',
+    cashAddrTypes: {
+      'pubkeyhash': 0,
+      'scripthash': 1
+    },
+    pubKeyHash: 0x6f,
+    scriptHash: 0xc4,
+    wif: 0xef
+  },
   bitcoincash: {
     messagePrefix: '\x18Bitcoin Signed Message:\n',
     bip32: {
@@ -52,6 +67,17 @@ module.exports = {
     pubKeyHash: 0x00,
     scriptHash: 0x05,
     wif: 0x80
+  },
+  regtest: {
+    messagePrefix: '\x18Bitcoin Signed Message:\n',
+    bech32: 'tb',
+    bip32: {
+      public: 0x043587cf,
+      private: 0x04358394
+    },
+    pubKeyHash: 0x6f,
+    scriptHash: 0xc4,
+    wif: 0xef
   },
   testnet: {
     messagePrefix: '\x18Bitcoin Signed Message:\n',
