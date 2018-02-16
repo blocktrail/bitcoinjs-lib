@@ -88,6 +88,14 @@ function toOutputScript (address, network, useNewCashAddress) {
 
     }
 
+    try {
+      decode = fromCashAddress(network.cashAddrPrefix + ':' + address)
+      if (decode.version === 'pubkeyhash') return bscript.pubKeyHash.output.encode(decode.hash)
+      if (decode.version === 'scripthash') return bscript.scriptHash.output.encode(decode.hash)
+    } catch (e) {
+
+    }
+
     if (decode) {
       if (decode.prefix !== network.cashAddrPrefix) throw new Error(address + ' has an invalid prefix')
     }

@@ -133,6 +133,26 @@ describe('address', function () {
   })
 
   describe('toOutputScript', function () {
+    it('fails when short cashaddr is used on wrong network', function () {
+      var bch = networks.bitcoincash
+      var tbch = networks.bitcoincashtestnet
+      var fullAddress = 'bitcoincash:qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6a'
+      var shortAddress = 'qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6a'
+
+      var script1 = baddress.toOutputScript(fullAddress, bch, true)
+      var script2 = baddress.toOutputScript(shortAddress, bch, true)
+      assert.strictEqual(script1.toString('hex'), script2.toString('hex'))
+
+      var e
+      try {
+        baddress.toOutputScript(shortAddress, tbch, true)
+      } catch (_e) {
+        e = _e
+        assert.ok("qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6a has no matching Script" == _e.message)
+      }
+      assert.ok(e)
+    })
+
     fixtures.standard.forEach(function (f) {
       it('decodes ' + f.script.slice(0, 30) + '... (' + f.network + ')', function () {
         var script;
@@ -141,6 +161,13 @@ describe('address', function () {
         } else if (f.bech32) {
           script = baddress.toOutputScript(f.bech32, networks[f.network])
         } else if (f.cashaddr) {
+          var prefixLen = networks[f.network].cashAddrPrefix.length
+          if (f.cashaddr.slice(prefixLen) === networks[f.network].cashAddrPrefix) {
+            // do one with sliced off prefix fixture
+            script = baddress.toOutputScript(f.cashaddr.slice(prefixLen + 1), networks[f.network], true)
+            assert.strictEqual(bscript.toASM(script), f.script)
+          }
+          // do one with default test fixture
           script = baddress.toOutputScript(f.cashaddr, networks[f.network], true)
         }
         assert.strictEqual(bscript.toASM(script), f.script)
